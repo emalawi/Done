@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Done - PDF Downloads</title>
+    <style>
+        :root {
+            --primary-color: #0366d6;
+            --bg-color: #f6f8fa;
+            --card-bg: #ffffff;
+            --text-color: #24292e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--text-color);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        header p {
+            margin: 0.5rem 0 0 0;
+            color: #8b949e;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .pdf-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .pdf-card {
+            background: var(--card-bg);
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .pdf-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .pdf-card h3 {
+            font-size: 1.1rem;
+            margin-top: 0;
+            word-wrap: break-word;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .download-btn:hover {
+            background-color: #005cc5;
+        }
+
+        .loading, .error {
+            text-align: center;
+            font-size: 1.2rem;
+            padding: 2rem;
+        }
+
+        .error {
+            color: #cb2431;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Done PDF Library</h1>
+        <p>Download PDFs directly from the repository</p>
+    </header>
+
+    <div class="container">
+        <div id="pdf-container" class="pdf-list">
+            <div class="loading">Loading PDFs from GitHub...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const username = 'emalawi';
+        const repo = 'Done';
+        
+        // If the PDFs are in a specific folder named "Done" inside the repo, use 'Done'.
+        // If they are just in the main repository folder, change this to '' (empty string).
+        const folder = 'Done'; 
+
+        // Construct the GitHub API URL
+        const apiUrl = folder 
+            ? `https://api.github.com/repos/${username}/${repo}/contents/${folder}`
+            : `https://api.github.com/repos/${username}/${repo}/contents`;
+
+        async function fetchPDFs() {
+            const container = document.getElementById('pdf-container');
+            
+            try {
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API returned ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Filter only files that end with .pdf
+                const pdfFiles = data.filter(file => file.name.toLowerCase().endsWith('.pdf'));
+
+                // Clear the loading text
+                container.innerHTML = '';
+
+                if (pdfFiles.length === 0) {
+                    container.innerHTML = '<div class="error">No PDF files found in this folder.</div>';
+                    return;
+                }
+
+                // Generate HTML for each PDF
+                pdfFiles.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = 'pdf-card';
+                    card.innerHTML = `
+                        <h3>${file.name}</h3>
+                        <a href="${file.download_url}" target="_blank" class="download-btn">Download PDF</a>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                container.innerHTML = `<div class="error">Failed to load PDFs. Make sure the repository and folder exist and are public.</div>`;
+            }
+        }
+
+        // Initialize the fetch when the page loads
+        fetchPDFs();
+    </script>
+</body>
+</html>
